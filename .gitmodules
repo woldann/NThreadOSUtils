@@ -1,0 +1,6 @@
+[submodule "tests/NThread"]
+	path = tests/NThread
+	url = https://github.com/woldann/NThread
+[submodule "tests/Neptune"]
+	path = tests/Neptune
+	url = https://github.com/woldann/Neptune
