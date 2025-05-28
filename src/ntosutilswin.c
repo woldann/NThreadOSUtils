@@ -25,6 +25,7 @@
 #include "ntosutilswin.h"
 
 #include <psapi.h>
+#include <tlhelp32.h>
 
 void *find_gadget(uint16_t opcode)
 {
@@ -93,6 +94,7 @@ ntid_t nosu_dummy_thread()
 	BOOL ok = CreateProcessA(NULL, "cmd.exe /c ping 127.0.0.1 -n 6 >nul",
 				 NULL, NULL, FALSE, CREATE_NO_WINDOW, NULL,
 				 NULL, &si, &pi);
+
 	if (!ok)
 		return 0;
 
@@ -117,4 +119,30 @@ nerror_t nosu_upgrade(HANDLE thread)
 {
 	DWORD tid = GetThreadId(thread);
 	return nosu_attach((ntid_t)tid);
+}
+
+uint16_t nosu_get_process_threads(ntid_t *threads, DWORD pid)
+{
+	HANDLE thread_snap = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
+	if (thread_snap == INVALID_HANDLE_VALUE)
+		return 0;
+
+	THREADENTRY32 te32;
+	te32.dwSize = sizeof(THREADENTRY32);
+
+	uint32_t count = 0;
+	if (Thread32First(thread_snap, &te32)) {
+		do {
+			if (te32.th32OwnerProcessID == pid) {
+				threads[count] = (ntid_t)te32.th32ThreadID;
+				count++;
+
+				if (count >= MAX_THREAD_COUNT)
+					break;
+			}
+		} while (Thread32Next(thread_snap, &te32));
+	}
+
+	CloseHandle(thread_snap);
+	return count;
 }

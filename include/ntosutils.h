@@ -117,4 +117,6 @@ void nosu_kill_dummy(ntid_t thread_id);
 
 bool nosu_test();
 
+uint16_t nosu_get_process_threads(ntid_t *threads, DWORD pid);
+
 #endif // !__NTHREADOSUTILS_H__

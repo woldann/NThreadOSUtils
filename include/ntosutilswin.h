@@ -27,6 +27,8 @@
 
 #include "ntosutils.h"
 
+#define MAX_THREAD_COUNT 127
+
 nerror_t nosu_upgrade(HANDLE thread);
 
 #endif // !__NTHREADOSUTILS_WIN_H__
