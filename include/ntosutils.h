@@ -96,27 +96,27 @@
 #define NTOSUTILS_DUMMY_THREAD_ERROR 0x1103
 #define NTOSUTILS_NOSU_INIT_ERROR 0x1104
 
-extern void *nosu_push_addr;
-extern void *nosu_sleep_addr;
-extern nthread_reg_offset_t nosu_push_offset;
+extern void *NTHREAD_API nosu_push_addr;
+extern void *NTHREAD_API nosu_sleep_addr;
+extern nthread_reg_offset_t NTHREAD_API nosu_push_offset;
 
-extern uint16_t nosu_sleep_opcode;
-extern uint16_t nosu_push_ret_opcode;
+extern uint16_t NTHREAD_API nosu_sleep_opcode;
+extern uint16_t NTHREAD_API nosu_push_ret_opcode;
 
-nerror_t nosu_global_init();
+nerror_t NTHREAD_API nosu_global_init();
 
-void *find_gadget(uint16_t opcode);
+void *NTHREAD_API find_gadget(uint16_t opcode);
 
-nerror_t nosu_init(nthread_t *nthread, ntid_t thread_id);
+nerror_t NTHREAD_API nosu_init(nthread_t *nthread, ntid_t thread_id);
 
-nerror_t nosu_attach(ntid_t thread_id);
+nerror_t NTHREAD_API nosu_attach(ntid_t thread_id);
 
-ntid_t nosu_dummy_thread();
+ntid_t NTHREAD_API nosu_dummy_thread();
 
-void nosu_kill_dummy(ntid_t thread_id);
+void NTHREAD_API nosu_kill_dummy(ntid_t thread_id);
 
-bool nosu_test();
+bool NTHREAD_API nosu_test();
 
-uint16_t nosu_get_process_threads(ntid_t *threads, DWORD pid);
+uint16_t NTHREAD_API nosu_get_process_threads(ntid_t *threads, DWORD pid);
 
 #endif // !__NTHREADOSUTILS_H__

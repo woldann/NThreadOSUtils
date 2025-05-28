@@ -26,6 +26,7 @@ if (TARGET Neptune AND TARGET NThread)
     target_compile_definitions(gadgets PRIVATE
       LOG_LEVEL_3
 			NEPTUNE_MODULERULES_HEADER="ntosutils_rules.h"
+      NEPTUNE_API_EXPORT
     )
 
 		target_include_directories(gadgets PRIVATE ${NTHREAD_INCLUDE_DIR})

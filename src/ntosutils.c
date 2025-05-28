@@ -24,18 +24,18 @@
 
 #include "ntosutils.h"
 
-void *nosu_push_addr;
-void *nosu_sleep_addr;
-nthread_reg_offset_t nosu_push_offset;
+void *NTHREAD_API nosu_push_addr;
+void *NTHREAD_API nosu_sleep_addr;
+nthread_reg_offset_t NTHREAD_API nosu_push_offset;
 
-uint16_t nosu_sleep_opcode;
-uint16_t nosu_push_ret_opcode;
+uint16_t NTHREAD_API nosu_sleep_opcode;
+uint16_t NTHREAD_API nosu_push_ret_opcode;
 
 uint16_t push_ret_opcodes[] = { PUSH_RBX_RET_OPCODE, PUSH_RBP_RET_OPCODE,
 				PUSH_RSI_RET_OPCODE, PUSH_RDI_RET_OPCODE };
 uint16_t sleep_opcodes[] = { SLEEP_OPCODE };
 
-nerror_t nosu_global_init()
+nerror_t NTHREAD_API nosu_global_init()
 {
 	int8_t i;
 
@@ -107,19 +107,19 @@ nerror_t nosu_global_init()
 	return N_OK;
 }
 
-nerror_t nosu_init(nthread_t *nthread, ntid_t thread_id)
+nerror_t NTHREAD_API nosu_init(nthread_t *nthread, ntid_t thread_id)
 {
 	return nthread_init(nthread, thread_id, nosu_push_offset,
 			    nosu_push_addr, nosu_sleep_addr);
 }
 
-nerror_t nosu_attach(ntid_t thread_id)
+nerror_t NTHREAD_API nosu_attach(ntid_t thread_id)
 {
 	return ntu_attach_ex(thread_id, nosu_push_offset, nosu_push_addr,
 			     nosu_sleep_addr);
 }
 
-bool nosu_test()
+bool NTHREAD_API nosu_test()
 {
 	ntid_t tid = nosu_dummy_thread();
 	if (tid == 0)

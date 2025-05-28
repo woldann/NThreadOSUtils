@@ -27,7 +27,7 @@
 #include <psapi.h>
 #include <tlhelp32.h>
 
-void *find_gadget(uint16_t opcode)
+void *NTHREAD_API find_gadget(uint16_t opcode)
 {
 	HANDLE proc = GetCurrentProcess();
 	if (NULL == proc)
@@ -85,7 +85,7 @@ void *find_gadget(uint16_t opcode)
 	return NULL;
 }
 
-ntid_t nosu_dummy_thread()
+ntid_t NTHREAD_API nosu_dummy_thread()
 {
 	STARTUPINFOA si = { 0 };
 	PROCESS_INFORMATION pi = { 0 };
@@ -101,7 +101,7 @@ ntid_t nosu_dummy_thread()
 	return pi.dwThreadId;
 }
 
-void nosu_kill_dummy(ntid_t thread_id)
+void NTHREAD_API nosu_kill_dummy(ntid_t thread_id)
 {
 	HANDLE thread = OpenThread(THREAD_QUERY_INFORMATION, FALSE, thread_id);
 	if (thread == NULL)
@@ -115,13 +115,14 @@ void nosu_kill_dummy(ntid_t thread_id)
 	TerminateProcess(handle, 0);
 }
 
-nerror_t nosu_upgrade(HANDLE thread)
+nerror_t NTHREAD_API nosu_upgrade(HANDLE thread)
 {
 	DWORD tid = GetThreadId(thread);
 	return nosu_attach((ntid_t)tid);
 }
 
-HANDLE nosu_find_available_thread(ntid_t *thread_ids, uint16_t thread_id_count)
+HANDLE NTHREAD_API nosu_find_available_thread(ntid_t *thread_ids,
+					      uint16_t thread_id_count)
 {
 	HANDLE threads[MAX_THREAD_COUNT];
 	void *last_rips[MAX_THREAD_COUNT];
@@ -176,7 +177,7 @@ nosu_find_avaible_thread_exit:
 	return sel_thread;
 }
 
-uint16_t nosu_get_process_threads(ntid_t *thread_ids, DWORD pid)
+uint16_t NTHREAD_API nosu_get_process_threads(ntid_t *thread_ids, DWORD pid)
 {
 	HANDLE thread_snap = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
 	if (thread_snap == INVALID_HANDLE_VALUE)
