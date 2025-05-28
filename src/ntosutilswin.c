@@ -121,7 +121,62 @@ nerror_t nosu_upgrade(HANDLE thread)
 	return nosu_attach((ntid_t)tid);
 }
 
-uint16_t nosu_get_process_threads(ntid_t *threads, DWORD pid)
+HANDLE nosu_find_available_thread(ntid_t *thread_ids, uint16_t thread_id_count)
+{
+	HANDLE threads[MAX_THREAD_COUNT];
+	void *last_rips[MAX_THREAD_COUNT];
+	uint16_t thread_count = 0;
+
+	for (uint16_t i = 0; i < thread_id_count; i++) {
+		ntid_t tid = thread_ids[i];
+		HANDLE thread = OpenThread(NTHREAD_ACCESS, false, tid);
+		if (thread != NULL) {
+			threads[thread_count] = thread;
+			last_rips[i] = 0;
+			thread_count++;
+		}
+	}
+
+	CONTEXT ctx;
+	ctx.ContextFlags = CONTEXT_CONTROL;
+
+	uint16_t re_thread_count = thread_count;
+	HANDLE sel_thread = NULL;
+
+	while (re_thread_count > 0) {
+		for (uint16_t i = 0; i < thread_count; i++) {
+			HANDLE thread = threads[i];
+			if (thread == NULL)
+				continue;
+
+			if (!GetThreadContext(thread, &ctx)) {
+				re_thread_count--;
+				threads[i] = NULL;
+				continue;
+			}
+
+			void *rip = (void *)ctx.Rip;
+			void *last_rip = last_rips[i];
+			if (last_rip != NULL && last_rip != rip) {
+				sel_thread = thread;
+				goto nosu_find_avaible_thread_exit;
+			} else
+				last_rips[i] = rip;
+		}
+	}
+
+nosu_find_avaible_thread_exit:
+
+	for (uint16_t i = 0; i < thread_count; i++) {
+		HANDLE thread = threads[i];
+		if (thread != sel_thread)
+			CloseHandle(threads[i]);
+	}
+
+	return sel_thread;
+}
+
+uint16_t nosu_get_process_threads(ntid_t *thread_ids, DWORD pid)
 {
 	HANDLE thread_snap = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
 	if (thread_snap == INVALID_HANDLE_VALUE)
@@ -134,7 +189,7 @@ uint16_t nosu_get_process_threads(ntid_t *threads, DWORD pid)
 	if (Thread32First(thread_snap, &te32)) {
 		do {
 			if (te32.th32OwnerProcessID == pid) {
-				threads[count] = (ntid_t)te32.th32ThreadID;
+				thread_ids[count] = (ntid_t)te32.th32ThreadID;
 				count++;
 
 				if (count >= MAX_THREAD_COUNT)

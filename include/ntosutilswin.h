@@ -29,6 +29,8 @@
 
 #define MAX_THREAD_COUNT 127
 
+HANDLE nosu_find_available_thread(ntid_t *thread_ids, uint16_t thread_id_count);
+
 nerror_t nosu_upgrade(HANDLE thread);
 
 #endif // !__NTHREADOSUTILS_WIN_H__

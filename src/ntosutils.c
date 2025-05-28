@@ -74,7 +74,7 @@ nerror_t nosu_global_init()
 	if (push_ret_opcode == PUSH_RDI_RET_OPCODE ||
 	    push_ret_opcode == PUSH_RSI_RET_OPCODE) {
 		LOG_WARN(
-			"A push gadget was found, but using this register may lead to instability.");
+			"A push gadget was found, but using this register may lead to instability");
 	}
 
 #endif /* ifdef LOG_LEVEL_2 */
