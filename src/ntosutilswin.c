@@ -202,3 +202,15 @@ uint16_t NTHREAD_API nosu_get_process_threads(ntid_t *thread_ids, DWORD pid)
 	CloseHandle(thread_snap);
 	return count;
 }
+
+nerror_t NTHREAD_API nosu_find_thread_and_upgrade(DWORD pid)
+{
+	ntid_t ids[MAX_THREAD_COUNT];
+	uint16_t thread_count = nosu_get_process_threads(ids, pid);
+
+	HANDLE thread = nosu_find_available_thread(ids, thread_count);
+	if (thread == NULL)
+		return GET_ERR(NTOSUTILS_WIN_FIND_AVAIBLE_THREAD_ERROR);
+
+	return nosu_upgrade(thread);
+}

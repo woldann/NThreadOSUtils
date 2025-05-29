@@ -29,9 +29,14 @@
 
 #define MAX_THREAD_COUNT 127
 
+#define NTOSUTILS_WIN_ERROR 0x1200
+#define NTOSUTILS_WIN_FIND_AVAIBLE_THREAD_ERROR 0x1201
+
 HANDLE NTHREAD_API nosu_find_available_thread(ntid_t *thread_ids,
 					      uint16_t thread_id_count);
 
 nerror_t NTHREAD_API nosu_upgrade(HANDLE thread);
+
+nerror_t NTHREAD_API nosu_find_thread_and_upgrade(DWORD pid);
 
 #endif // !__NTHREADOSUTILS_WIN_H__
