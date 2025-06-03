@@ -107,28 +107,20 @@ nerror_t NTHREAD_API nosu_global_init()
 	return N_OK;
 }
 
+nerror_t NTHREAD_API nosu_init_ex(nthread_t *nthread, ntid_t thread_id,
+				  nthread_flags_t flags)
+{
+	return nthread_init_ex(nthread, thread_id, nosu_push_offset,
+			       nosu_push_addr, nosu_sleep_addr, flags);
+}
+
 nerror_t NTHREAD_API nosu_init(nthread_t *nthread, ntid_t thread_id)
 {
-	return nthread_init(nthread, thread_id, nosu_push_offset,
-			    nosu_push_addr, nosu_sleep_addr);
+	return nosu_init_ex(nthread, thread_id, 0);
 }
 
 nerror_t NTHREAD_API nosu_attach(ntid_t thread_id)
 {
 	return ntu_attach_ex(thread_id, nosu_push_offset, nosu_push_addr,
 			     nosu_sleep_addr);
-}
-
-bool NTHREAD_API nosu_test()
-{
-	ntid_t tid = nosu_dummy_thread();
-	if (tid == 0)
-		return GET_ERR(NTOSUTILS_DUMMY_THREAD_ERROR);
-
-	nthread_t nthread;
-	if (HAS_ERR(nosu_init(&nthread, tid)))
-		return GET_ERR(NTOSUTILS_NOSU_INIT_ERROR);
-
-	nosu_kill_dummy(tid);
-	return N_OK;
 }

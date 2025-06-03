@@ -31,16 +31,6 @@ int main(int argc, char *argv[])
 
 	LOG_INFO("Neptune initilaized!");
 
-	ntid_t ids[MAX_THREAD_COUNT];
-	uint16_t count = nosu_get_process_threads(ids, 1124);
-	HANDLE thread = nosu_find_available_thread(ids, count);
-	LOG_INFO("Thread(%p)", thread);
-
-	if (HAS_ERR(nosu_upgrade(thread))) {
-		LOG_INFO("AAA");
-		return 0x05;
-	}
-
 	ntu_destroy();
 	neptune_destroy();
 	return EXIT_SUCCESS;

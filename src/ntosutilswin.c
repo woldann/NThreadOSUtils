@@ -23,6 +23,7 @@
  */
 
 #include "ntosutilswin.h"
+#include "nmem.h"
 
 #include <psapi.h>
 #include <tlhelp32.h>
@@ -85,7 +86,7 @@ void *NTHREAD_API find_gadget(uint16_t opcode)
 	return NULL;
 }
 
-ntid_t NTHREAD_API nosu_dummy_thread()
+ntid_t NTHREAD_API nosu_dummy_process()
 {
 	STARTUPINFOA si = { 0 };
 	PROCESS_INFORMATION pi = { 0 };
@@ -98,17 +99,12 @@ ntid_t NTHREAD_API nosu_dummy_thread()
 	if (!ok)
 		return 0;
 
-	return pi.dwThreadId;
+	return pi.dwProcessId;
 }
 
-void NTHREAD_API nosu_kill_dummy(ntid_t thread_id)
+void NTHREAD_API nosu_kill_dummy(DWORD process_id)
 {
-	HANDLE thread = OpenThread(THREAD_QUERY_INFORMATION, FALSE, thread_id);
-	if (thread == NULL)
-		return;
-
-	DWORD pid = GetProcessIdOfThread(thread);
-	HANDLE handle = OpenProcess(PROCESS_TERMINATE, FALSE, pid);
+	HANDLE handle = OpenProcess(PROCESS_TERMINATE, FALSE, process_id);
 	if (handle == NULL)
 		return;
 
@@ -121,19 +117,27 @@ nerror_t NTHREAD_API nosu_upgrade(HANDLE thread)
 	return nosu_attach((ntid_t)tid);
 }
 
+struct thread_n_rip {
+	HANDLE thread;
+	void *rip;
+};
+
 HANDLE NTHREAD_API nosu_find_available_thread(ntid_t *thread_ids,
 					      uint16_t thread_id_count)
 {
-	HANDLE threads[MAX_THREAD_COUNT];
-	void *last_rips[MAX_THREAD_COUNT];
+	struct thread_n_rip *list =
+		N_ALLOC(thread_id_count * sizeof(struct thread_n_rip));
+	if (list == NULL)
+		return NULL;
+
 	uint16_t thread_count = 0;
 
 	for (uint16_t i = 0; i < thread_id_count; i++) {
 		ntid_t tid = thread_ids[i];
 		HANDLE thread = OpenThread(NTHREAD_ACCESS, false, tid);
 		if (thread != NULL) {
-			threads[thread_count] = thread;
-			last_rips[i] = 0;
+			list[i].thread = thread;
+			list[i].rip = 0;
 			thread_count++;
 		}
 	}
@@ -146,38 +150,47 @@ HANDLE NTHREAD_API nosu_find_available_thread(ntid_t *thread_ids,
 
 	while (re_thread_count > 0) {
 		for (uint16_t i = 0; i < thread_count; i++) {
-			HANDLE thread = threads[i];
+			HANDLE thread = list[i].thread;
 			if (thread == NULL)
 				continue;
 
-			if (!GetThreadContext(thread, &ctx)) {
-				re_thread_count--;
-				threads[i] = NULL;
-				continue;
-			}
+			if (SuspendThread(thread) == (DWORD)(-1))
+				goto nosu_find_avaible_thread_remove;
+			if (!GetThreadContext(thread, &ctx))
+				goto nosu_find_avaible_thread_remove;
 
 			void *rip = (void *)ctx.Rip;
-			void *last_rip = last_rips[i];
+			void *last_rip = list[i].rip;
 			if (last_rip != NULL && last_rip != rip) {
 				sel_thread = thread;
 				goto nosu_find_avaible_thread_exit;
-			} else
-				last_rips[i] = rip;
+			} else {
+				list[i].rip = rip;
+
+				if (ResumeThread(thread) == (DWORD)(-1)) {
+nosu_find_avaible_thread_remove:
+					re_thread_count--;
+					list[i].thread = NULL;
+				}
+			}
 		}
 	}
 
 nosu_find_avaible_thread_exit:
 
 	for (uint16_t i = 0; i < thread_count; i++) {
-		HANDLE thread = threads[i];
+		HANDLE thread = list[i].thread;
 		if (thread != sel_thread)
-			CloseHandle(threads[i]);
+			CloseHandle(thread);
 	}
 
+	N_FREE(list);
 	return sel_thread;
 }
 
-uint16_t NTHREAD_API nosu_get_process_threads(ntid_t *thread_ids, DWORD pid)
+uint16_t NTHREAD_API nosu_foreach_threads(DWORD pid,
+					  nosu_thread_callback_t callback,
+					  void *param)
 {
 	HANDLE thread_snap = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
 	if (thread_snap == INVALID_HANDLE_VALUE)
@@ -190,10 +203,9 @@ uint16_t NTHREAD_API nosu_get_process_threads(ntid_t *thread_ids, DWORD pid)
 	if (Thread32First(thread_snap, &te32)) {
 		do {
 			if (te32.th32OwnerProcessID == pid) {
-				thread_ids[count] = (ntid_t)te32.th32ThreadID;
 				count++;
-
-				if (count >= MAX_THREAD_COUNT)
+				bool b = callback(te32.th32ThreadID, param);
+				if (!b)
 					break;
 			}
 		} while (Thread32Next(thread_snap, &te32));
@@ -203,14 +215,82 @@ uint16_t NTHREAD_API nosu_get_process_threads(ntid_t *thread_ids, DWORD pid)
 	return count;
 }
 
+struct thread_ids_n_count {
+	ntid_t *ids;
+	uint16_t count;
+};
+
+static bool nosu_get_threads_helper(ntid_t tid, void *param)
+{
+	struct thread_ids_n_count *params = (struct thread_ids_n_count *)param;
+	ntid_t *ids = params->ids;
+	uint16_t count = params->count;
+
+	if ((count % 32) == 0) {
+		size_t new_size = (count + 32) * sizeof(ntid_t);
+		void *new_ids = N_REALLOC(ids, new_size);
+		if (new_ids == NULL)
+			return false;
+
+		ids = new_ids;
+	}
+
+	ids[count] = tid;
+	count++;
+
+	params->ids = ids;
+	params->count = count;
+	return true;
+}
+
+ntid_t *NTHREAD_API nosu_get_threads(DWORD pid, uint16_t *thread_count)
+{
+	struct thread_ids_n_count param;
+	param.ids = N_ALLOC(0);
+	if (param.ids == NULL)
+		return NULL;
+
+	param.count = 0;
+	nosu_foreach_threads(pid, nosu_get_threads_helper, &param);
+
+	*thread_count = param.count;
+	void *ids = N_REALLOC(param.ids, param.count * sizeof(ntid_t));
+	if (ids == NULL)
+		return param.ids;
+
+	return ids;
+}
+
+HANDLE NTHREAD_API nosu_find_thread(DWORD pid)
+{
+	uint16_t thread_count;
+	ntid_t *ids = nosu_get_threads(pid, &thread_count);
+	if (ids == NULL)
+		return NULL;
+
+	return nosu_find_available_thread(ids, thread_count);
+}
+
 nerror_t NTHREAD_API nosu_find_thread_and_upgrade(DWORD pid)
 {
-	ntid_t ids[MAX_THREAD_COUNT];
-	uint16_t thread_count = nosu_get_process_threads(ids, pid);
-
-	HANDLE thread = nosu_find_available_thread(ids, thread_count);
-	if (thread == NULL)
-		return GET_ERR(NTOSUTILS_WIN_FIND_AVAIBLE_THREAD_ERROR);
-
+	HANDLE thread = nosu_find_thread(pid);
 	return nosu_upgrade(thread);
+}
+
+bool NTHREAD_API nosu_test()
+{
+	DWORD pid = nosu_dummy_process();
+	if (pid == 0)
+		return GET_ERR(NTOSUTILS_DUMMY_PROCESS_ERROR);
+
+	HANDLE thread = nosu_find_thread(pid);
+	ntid_t tid = GetThreadId(thread);
+	CloseHandle(thread);
+
+	nthread_t nthread;
+	if (HAS_ERR(nosu_init_ex(&nthread, tid, NTHREAD_FLAG_DONT_SUSPEND)))
+		return GET_ERR(NTOSUTILS_NOSU_INIT_ERROR);
+
+	nosu_kill_dummy(pid);
+	return N_OK;
 }
