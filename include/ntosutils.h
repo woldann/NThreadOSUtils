@@ -123,6 +123,9 @@ uint16_t NTHREAD_API nosu_foreach_threads(DWORD pid,
 					  nosu_thread_callback_t callback,
 					  void *param);
 
-ntid_t *NTHREAD_API nosu_get_threads(DWORD pid, uint16_t *thread_count);
+uint16_t NTHREAD_API nosu_get_threads_ex(DWORD pid, ntid_t **thread_ids,
+					 size_t *thread_ids_size);
+
+ntid_t *NTHREAD_API nosu_get_threads(DWORD pid, uint16_t *thread_id_count);
 
 #endif // !__NTHREADOSUTILS_H__

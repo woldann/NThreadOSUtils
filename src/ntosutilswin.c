@@ -215,19 +215,29 @@ uint16_t NTHREAD_API nosu_foreach_threads(DWORD pid,
 	return count;
 }
 
-struct thread_ids_n_count {
+struct thread_ids_count_size {
 	ntid_t *ids;
 	uint16_t count;
+	size_t size;
 };
 
 static bool nosu_get_threads_helper(ntid_t tid, void *param)
 {
-	struct thread_ids_n_count *params = (struct thread_ids_n_count *)param;
+	struct thread_ids_count_size *params =
+		(struct thread_ids_count_size *)param;
 	ntid_t *ids = params->ids;
 	uint16_t count = params->count;
+	size_t size = params->size;
 
-	if ((count % 32) == 0) {
-		size_t new_size = (count + 32) * sizeof(ntid_t);
+	uint16_t new_count = count + 1;
+
+	size_t acc = new_count * sizeof(ntid_t);
+	size_t new_size = size;
+
+	while (acc > new_size)
+		new_size = size + 124;
+
+	if (size != new_size) {
 		void *new_ids = N_REALLOC(ids, new_size);
 		if (new_ids == NULL)
 			return false;
@@ -236,27 +246,39 @@ static bool nosu_get_threads_helper(ntid_t tid, void *param)
 	}
 
 	ids[count] = tid;
-	count++;
 
 	params->ids = ids;
-	params->count = count;
+	params->count = new_count;
+	params->size = new_size;
 	return true;
 }
 
-ntid_t *NTHREAD_API nosu_get_threads(DWORD pid, uint16_t *thread_count)
+uint16_t NTHREAD_API nosu_get_threads_ex(DWORD pid, ntid_t **thread_ids,
+					 size_t *thread_ids_size)
 {
-	struct thread_ids_n_count param;
-	param.ids = N_ALLOC(0);
-	if (param.ids == NULL)
-		return NULL;
-
+	struct thread_ids_count_size param;
+	param.ids = *thread_ids;
 	param.count = 0;
+	param.size = *thread_ids_size;
+
 	nosu_foreach_threads(pid, nosu_get_threads_helper, &param);
 
-	*thread_count = param.count;
-	void *ids = N_REALLOC(param.ids, param.count * sizeof(ntid_t));
+	*thread_ids = param.ids;
+	*thread_ids_size = param.size;
+	return param.count;
+}
+
+ntid_t *NTHREAD_API nosu_get_threads(DWORD pid, uint16_t *thread_id_count)
+{
+	ntid_t *thread_ids = NULL;
+	size_t size;
+	uint16_t count = nosu_get_threads_ex(pid, &thread_ids, &size);
+
+	*thread_id_count = count;
+
+	void *ids = N_REALLOC(thread_ids, count * sizeof(ntid_t));
 	if (ids == NULL)
-		return param.ids;
+		return thread_ids;
 
 	return ids;
 }
