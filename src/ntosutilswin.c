@@ -293,10 +293,28 @@ HANDLE NTHREAD_API nosu_find_thread(DWORD pid)
 	return nosu_find_available_thread(ids, thread_count);
 }
 
-nerror_t NTHREAD_API nosu_find_thread_and_upgrade(DWORD pid)
+static ntid_t nosu_get_id_and_close(HANDLE thread)
+{
+	ntid_t tid = GetThreadId(thread);
+	CloseHandle(thread);
+
+	return tid;
+}
+
+nerror_t NTHREAD_API nosu_find_nthread(nthread_t *nthread, DWORD pid)
 {
 	HANDLE thread = nosu_find_thread(pid);
-	return nosu_upgrade(thread);
+	ntid_t tid = nosu_get_id_and_close(thread);
+	return nosu_init_ex(nthread, tid, NTHREAD_FLAG_DONT_SUSPEND);
+}
+
+nerror_t NTHREAD_API nosu_find_thread_and_upgrade(DWORD pid)
+{
+	nthread_t nthread;
+	if (HAS_ERR(nosu_find_nthread(&nthread, pid)))
+		return GET_ERR(NTOSUTILS_NOSU_FIND_NTHREAD_ERROR);
+
+	return ntu_upgrade(&nthread);
 }
 
 bool NTHREAD_API nosu_test()
@@ -305,13 +323,9 @@ bool NTHREAD_API nosu_test()
 	if (pid == 0)
 		return GET_ERR(NTOSUTILS_DUMMY_PROCESS_ERROR);
 
-	HANDLE thread = nosu_find_thread(pid);
-	ntid_t tid = GetThreadId(thread);
-	CloseHandle(thread);
-
 	nthread_t nthread;
-	if (HAS_ERR(nosu_init_ex(&nthread, tid, NTHREAD_FLAG_DONT_SUSPEND)))
-		return GET_ERR(NTOSUTILS_NOSU_INIT_ERROR);
+	if (HAS_ERR(nosu_find_nthread(&nthread, pid)))
+		return GET_ERR(NTOSUTILS_NOSU_FIND_NTHREAD_ERROR);
 
 	nosu_kill_dummy(pid);
 	return N_OK;

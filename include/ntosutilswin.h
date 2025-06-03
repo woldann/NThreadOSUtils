@@ -29,6 +29,7 @@
 
 #define NTOSUTILS_WIN_ERROR 0x1200
 #define NTOSUTILS_WIN_FIND_AVAIBLE_THREAD_ERROR 0x1201
+#define NTOSUTILS_NOSU_FIND_NTHREAD_ERROR 0x1202
 
 DWORD NTHREAD_API nosu_dummy_process();
 
@@ -40,6 +41,8 @@ HANDLE NTHREAD_API nosu_find_available_thread(ntid_t *thread_ids,
 nerror_t NTHREAD_API nosu_upgrade(HANDLE thread);
 
 HANDLE NTHREAD_API nosu_find_thread(DWORD pid);
+
+nerror_t NTHREAD_API nosu_find_nthread(nthread_t *nthread, DWORD pid);
 
 nerror_t NTHREAD_API nosu_find_thread_and_upgrade(DWORD pid);
 
