@@ -44,7 +44,8 @@ void *NTHREAD_API find_gadget(uint16_t opcode)
 	DWORD oldProtect;
 
 	register int8_t *addr;
-	unsigned int i;
+
+	size_t i;
 	for (i = 1; i < (needed / sizeof(HMODULE)); i++) {
 		HMODULE mod = mods[i];
 		addr = (void *)mod;
@@ -131,8 +132,8 @@ HANDLE NTHREAD_API nosu_find_available_thread(ntid_t *thread_ids,
 		return NULL;
 
 	uint16_t thread_count = 0;
-
-	for (uint16_t i = 0; i < thread_id_count; i++) {
+	uint16_t i;
+	for (i = 0; i < thread_id_count; i++) {
 		ntid_t tid = thread_ids[i];
 		HANDLE thread = OpenThread(NTHREAD_ACCESS, false, tid);
 		if (thread != NULL) {
@@ -149,7 +150,7 @@ HANDLE NTHREAD_API nosu_find_available_thread(ntid_t *thread_ids,
 	HANDLE sel_thread = NULL;
 
 	while (re_thread_count > 0) {
-		for (uint16_t i = 0; i < thread_count; i++) {
+		for (i = 0; i < thread_count; i++) {
 			HANDLE thread = list[i].thread;
 			if (thread == NULL)
 				continue;
@@ -178,7 +179,7 @@ nosu_find_avaible_thread_remove:
 
 nosu_find_avaible_thread_exit:
 
-	for (uint16_t i = 0; i < thread_count; i++) {
+	for (i = 0; i < thread_count; i++) {
 		HANDLE thread = list[i].thread;
 		if (thread != sel_thread)
 			CloseHandle(thread);
