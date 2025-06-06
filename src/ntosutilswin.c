@@ -128,6 +128,7 @@ HANDLE NTHREAD_API nosu_find_available_thread(ntid_t *thread_ids,
 {
 	struct thread_n_rip *list =
 		N_ALLOC(thread_id_count * sizeof(struct thread_n_rip));
+
 	if (list == NULL)
 		return NULL;
 
@@ -231,6 +232,7 @@ static bool nosu_get_threads_helper(ntid_t tid, void *param)
 {
 	struct thread_ids_count_size *params =
 		(struct thread_ids_count_size *)param;
+
 	ntid_t *ids = params->ids;
 	uint16_t count = params->count;
 	size_t size = params->size;
@@ -241,7 +243,7 @@ static bool nosu_get_threads_helper(ntid_t tid, void *param)
 	size_t new_size = size;
 
 	while (acc > new_size)
-		new_size = size + 124;
+		new_size = size + 80;
 
 	if (size != new_size) {
 		void *new_ids = N_REALLOC(ids, new_size);
@@ -277,7 +279,7 @@ uint16_t NTHREAD_API nosu_get_threads_ex(DWORD pid, ntid_t **thread_ids,
 ntid_t *NTHREAD_API nosu_get_threads(DWORD pid, uint16_t *thread_id_count)
 {
 	ntid_t *thread_ids = NULL;
-	size_t size;
+	size_t size = 0;
 	uint16_t count = nosu_get_threads_ex(pid, &thread_ids, &size);
 
 	*thread_id_count = count;
