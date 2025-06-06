@@ -133,12 +133,17 @@ HANDLE NTHREAD_API nosu_find_available_thread(ntid_t *thread_ids,
 
 	uint16_t thread_count = 0;
 	uint16_t i;
+	ntid_t ignored_id = GetCurrentThreadId();
+
 	for (i = 0; i < thread_id_count; i++) {
 		ntid_t tid = thread_ids[i];
+		if (tid == ignored_id)
+			continue;
+
 		HANDLE thread = OpenThread(NTHREAD_ACCESS, false, tid);
 		if (thread != NULL) {
-			list[i].thread = thread;
-			list[i].rip = 0;
+			list[thread_count].thread = thread;
+			list[thread_count].rip = 0;
 			thread_count++;
 		}
 	}
