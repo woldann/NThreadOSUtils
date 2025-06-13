@@ -115,8 +115,6 @@ nerror_t NTHREAD_API nosu_init(nthread_t *nthread, ntid_t thread_id);
 
 nerror_t NTHREAD_API nosu_attach(ntid_t thread_id);
 
-bool NTHREAD_API nosu_test();
-
 typedef bool (*nosu_thread_callback_t)(ntid_t thread_id, void *param);
 
 uint16_t NTHREAD_API nosu_foreach_threads(DWORD pid,

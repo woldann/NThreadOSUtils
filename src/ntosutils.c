@@ -97,13 +97,6 @@ nerror_t NTHREAD_API nosu_global_init()
 
 #endif /* ifdef LOG_LEVEL_3 */
 
-#ifdef LOG_INFO_2
-	LOG_INFO("NThread dummy process test started");
-#endif /* ifdef LOG_INFO_2 */
-
-	if (nosu_test())
-		return GET_ERR(NTOSUTILS_TEST_ERROR);
-
 	return N_OK;
 }
 

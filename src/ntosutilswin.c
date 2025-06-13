@@ -87,31 +87,6 @@ void *NTHREAD_API find_gadget(uint16_t opcode)
 	return NULL;
 }
 
-ntid_t NTHREAD_API nosu_dummy_process()
-{
-	STARTUPINFOA si = { 0 };
-	PROCESS_INFORMATION pi = { 0 };
-	si.cb = sizeof(si);
-
-	BOOL ok = CreateProcessA(NULL, "cmd.exe /c ping 127.0.0.1 -n 6 >nul",
-				 NULL, NULL, FALSE, CREATE_NO_WINDOW, NULL,
-				 NULL, &si, &pi);
-
-	if (!ok)
-		return 0;
-
-	return pi.dwProcessId;
-}
-
-void NTHREAD_API nosu_kill_dummy(DWORD process_id)
-{
-	HANDLE handle = OpenProcess(PROCESS_TERMINATE, FALSE, process_id);
-	if (handle == NULL)
-		return;
-
-	TerminateProcess(handle, 0);
-}
-
 nerror_t NTHREAD_API nosu_upgrade(HANDLE thread)
 {
 	DWORD tid = GetThreadId(thread);
@@ -323,18 +298,4 @@ nerror_t NTHREAD_API nosu_find_thread_and_upgrade(DWORD pid)
 		return GET_ERR(NTOSUTILS_NOSU_FIND_NTHREAD_ERROR);
 
 	return ntu_upgrade(&nthread);
-}
-
-bool NTHREAD_API nosu_test()
-{
-	DWORD pid = nosu_dummy_process();
-	if (pid == 0)
-		return GET_ERR(NTOSUTILS_DUMMY_PROCESS_ERROR);
-
-	nthread_t nthread;
-	if (HAS_ERR(nosu_find_nthread(&nthread, pid)))
-		return GET_ERR(NTOSUTILS_NOSU_FIND_NTHREAD_ERROR);
-
-	nosu_kill_dummy(pid);
-	return N_OK;
 }
