@@ -23,6 +23,7 @@
  */
 
 #include "ntosutilswin.h"
+#include "nerror.h"
 #include "nmem.h"
 
 #include <psapi.h>
@@ -61,8 +62,10 @@ void *NTHREAD_API find_gadget(uint16_t opcode)
 
 			bool readable = (protect == PAGE_EXECUTE_READ) ||
 					(protect == PAGE_EXECUTE_READWRITE);
-			bool executable = (protect == PAGE_EXECUTE) || readable;
 
+			bool executable =
+				(mbi.State == MEM_COMMIT) &&
+				((protect == PAGE_EXECUTE) || readable);
 			if (executable) {
 				if (!readable &&
 				    !VirtualProtect(addr, l,
@@ -132,10 +135,10 @@ HANDLE NTHREAD_API nosu_find_available_thread(ntid_t *thread_ids,
 	if (list == NULL)
 		return NULL;
 
-	uint16_t thread_count = 0;
-	uint16_t i;
 	ntid_t ignored_id = GetCurrentThreadId();
 
+	uint16_t i;
+	uint16_t thread_count = 0;
 	for (i = 0; i < thread_id_count; i++) {
 		ntid_t tid = thread_ids[i];
 		if (tid == ignored_id)
@@ -144,13 +147,29 @@ HANDLE NTHREAD_API nosu_find_available_thread(ntid_t *thread_ids,
 		HANDLE thread = OpenThread(NTHREAD_ACCESS, false, tid);
 		if (thread != NULL) {
 			list[thread_count].thread = thread;
-			list[thread_count].rip = 0;
+			list[thread_count].rip = NULL;
 			thread_count++;
 		}
 	}
 
+	DWORD64 base, end;
+	{
+		HMODULE ntdll = GetModuleHandleA("ntdll.dll");
+		if (!ntdll)
+			return NULL;
+
+		MODULEINFO mi;
+		if (!GetModuleInformation(GetCurrentProcess(), ntdll, &mi,
+					  sizeof(mi)))
+			return NULL;
+
+		base = (DWORD64)mi.lpBaseOfDll;
+		end = base + mi.SizeOfImage;
+	}
+
 	CONTEXT ctx;
 	ctx.ContextFlags = CONTEXT_CONTROL;
+	MEMORY_BASIC_INFORMATION mbi;
 
 	uint16_t re_thread_count = thread_count;
 	HANDLE sel_thread = NULL;
@@ -163,28 +182,43 @@ HANDLE NTHREAD_API nosu_find_available_thread(ntid_t *thread_ids,
 
 			if (SuspendThread(thread) == (DWORD)(-1))
 				goto nosu_find_avaible_thread_remove;
-			if (!GetThreadContext(thread, &ctx))
+
+			if (!GetThreadContext(thread, &ctx)) {
+nosu_find_avaible_thread_resume_n_remove:
+				ResumeThread(thread);
 				goto nosu_find_avaible_thread_remove;
+			}
 
 			void *rip = (void *)ctx.Rip;
-			void *last_rip = list[i].rip;
-			if (last_rip != NULL && last_rip != rip) {
-				sel_thread = thread;
-				goto nosu_find_avaible_thread_exit;
-			} else {
-				list[i].rip = rip;
+			if (rip < (void *)base || rip >= (void *)end) {
+				if (VirtualQuery(rip, &mbi, sizeof(mbi)) == 0)
+					goto nosu_find_avaible_thread_resume_n_remove;
 
-				if (ResumeThread(thread) == (DWORD)(-1)) {
+				if (mbi.State == MEM_COMMIT &&
+				    mbi.Protect &
+					    (PAGE_EXECUTE | PAGE_EXECUTE_READ |
+					     PAGE_EXECUTE_READWRITE)) {
+					void *last_rip = list[i].rip;
+					if (last_rip != NULL &&
+					    last_rip != rip) {
+						sel_thread = thread;
+						goto nosu_find_avaible_thread_exit;
+					}
+					list[i].rip = rip;
+				} else
+					list[i].rip = NULL;
+			} else
+				list[i].rip = NULL;
+
+			if (ResumeThread(thread) == (DWORD)(-1)) {
 nosu_find_avaible_thread_remove:
-					re_thread_count--;
-					list[i].thread = NULL;
-				}
+				re_thread_count--;
+				list[i].thread = NULL;
 			}
 		}
 	}
 
 nosu_find_avaible_thread_exit:
-
 	for (i = 0; i < thread_count; i++) {
 		HANDLE thread = list[i].thread;
 		if (thread != sel_thread)
