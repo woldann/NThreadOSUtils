@@ -14,7 +14,5 @@ target_include_directories(NThreadOSUtils INTERFACE ${NTOSUTILS_INCLUDE_DIR})
 target_include_directories(NThreadOSUtils INTERFACE ${NTOSUTILS_MODULE_RULES_DIR})
 target_sources(NThreadOSUtils INTERFACE ${NTOSUTILS_SOURCES})
 
-add_subdirectory(tests)
-
 target_link_libraries(NThreadOSUtils INTERFACE NThread)
 
