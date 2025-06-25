@@ -299,4 +299,3 @@ nerror_t NTHREAD_API nosu_find_thread_and_upgrade(DWORD pid)
 
 	return ntu_upgrade(&nthread);
 }
-
