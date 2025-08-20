@@ -31,9 +31,13 @@
 #define NTOSUTILS_WIN_FIND_AVAIBLE_THREAD_ERROR 0x1201
 #define NTOSUTILS_NOSU_FIND_NTHREAD_ERROR 0x1202
 
+#ifdef NTOSUTILS_TEST
+
 DWORD NTHREAD_API nosu_dummy_process();
 
 void NTHREAD_API nosu_kill_dummy(DWORD process_id);
+
+#endif // NTOSUTILS_TEST
 
 HANDLE NTHREAD_API nosu_find_available_thread(ntid_t *thread_ids,
 					      uint16_t thread_id_count);

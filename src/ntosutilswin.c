@@ -41,8 +41,6 @@ void *NTHREAD_API find_gadget(uint16_t opcode)
 		return NULL;
 
 	MEMORY_BASIC_INFORMATION mbi;
-	DWORD oldProtect;
-
 	register int8_t *addr;
 
 	size_t i;
@@ -87,6 +85,8 @@ void *NTHREAD_API find_gadget(uint16_t opcode)
 	return NULL;
 }
 
+#ifdef NTOSUTILS_TEST
+
 ntid_t NTHREAD_API nosu_dummy_process()
 {
 	STARTUPINFOA si = { 0 };
@@ -111,6 +111,8 @@ void NTHREAD_API nosu_kill_dummy(DWORD process_id)
 
 	TerminateProcess(handle, 0);
 }
+
+#endif /* ifdef NTOSUTILS_TEST */
 
 nerror_t NTHREAD_API nosu_upgrade(HANDLE thread)
 {
@@ -325,6 +327,8 @@ nerror_t NTHREAD_API nosu_find_thread_and_upgrade(DWORD pid)
 	return ntu_upgrade(&nthread);
 }
 
+#ifdef NTOSUTILS_TEST
+
 bool NTHREAD_API nosu_test()
 {
 	DWORD pid = nosu_dummy_process();
@@ -338,3 +342,5 @@ bool NTHREAD_API nosu_test()
 	nosu_kill_dummy(pid);
 	return N_OK;
 }
+
+#endif /* ifdef NTOSUTILS_TEST */

@@ -115,7 +115,11 @@ nerror_t NTHREAD_API nosu_init(nthread_t *nthread, ntid_t thread_id);
 
 nerror_t NTHREAD_API nosu_attach(ntid_t thread_id);
 
+#ifdef NTOSUTILS_TEST
+
 bool NTHREAD_API nosu_test();
+
+#endif // NTOSUTILS_TEST
 
 typedef bool (*nosu_thread_callback_t)(ntid_t thread_id, void *param);
 
