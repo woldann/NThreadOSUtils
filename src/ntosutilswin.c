@@ -54,8 +54,7 @@ void *NTHREAD_API find_gadget(uint16_t opcode)
 
 			DWORD protect = mbi.Protect;
 			uint64_t l =
-				(uint64_t)(mbi.BaseAddress - (void *)addr) +
-				mbi.RegionSize;
+				(uint64_t)mbi.BaseAddress - (uint64_t)addr + mbi.RegionSize;
 
 			bool readable = (protect == PAGE_EXECUTE_READ) ||
 					(protect == PAGE_EXECUTE_READWRITE);
