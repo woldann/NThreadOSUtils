@@ -25,6 +25,10 @@
 #ifndef __NTHREADOSUTILS_H__
 #define __NTHREADOSUTILS_H__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "ntutils.h"
 #include "neptune.h"
 
@@ -131,5 +135,9 @@ uint16_t NTHREAD_API nosu_get_threads_ex(DWORD pid, ntid_t **thread_ids,
 					 size_t *thread_ids_size);
 
 ntid_t *NTHREAD_API nosu_get_threads(DWORD pid, uint16_t *thread_id_count);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // !__NTHREADOSUTILS_H__

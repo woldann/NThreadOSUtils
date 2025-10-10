@@ -25,6 +25,10 @@
 #ifndef __NTHREADOSUTILS_WIN_H__
 #define __NTHREADOSUTILS_WIN_H__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "ntosutils.h"
 
 #define NTOSUTILS_WIN_ERROR 0x1200
@@ -49,5 +53,9 @@ HANDLE NTHREAD_API nosu_find_thread(DWORD pid);
 nerror_t NTHREAD_API nosu_find_nthread(nthread_t *nthread, DWORD pid);
 
 nerror_t NTHREAD_API nosu_find_thread_and_upgrade(DWORD pid);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // !__NTHREADOSUTILS_WIN_H__

@@ -22,6 +22,10 @@
  * SOFTWARE.
  */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "ntosutils.h"
 
 void *NTHREAD_API nosu_push_addr;
@@ -111,9 +115,10 @@ nerror_t NTHREAD_API nosu_global_init()
 	return N_OK;
 }
 
+
 nerror_t NTHREAD_API nosu_init_ex(nthread_t *nthread, ntid_t thread_id,
 				  nthread_flags_t flags)
-{
+	{
 	return nthread_init_ex(nthread, thread_id, nosu_push_offset,
 			       nosu_push_addr, nosu_sleep_addr, flags);
 }
@@ -128,3 +133,7 @@ nerror_t NTHREAD_API nosu_attach(ntid_t thread_id)
 	return ntu_attach_ex(thread_id, nosu_push_offset, nosu_push_addr,
 			     nosu_sleep_addr);
 }
+
+#ifdef __cplusplus
+}
+#endif

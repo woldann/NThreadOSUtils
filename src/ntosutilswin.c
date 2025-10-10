@@ -22,6 +22,10 @@
  * SOFTWARE.
  */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "ntosutilswin.h"
 #include "nmem.h"
 
@@ -343,3 +347,7 @@ bool NTHREAD_API nosu_test()
 }
 
 #endif /* ifdef NTOSUTILS_TEST */
+
+#ifdef __cplusplus
+}
+#endif
