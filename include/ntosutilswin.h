@@ -25,11 +25,15 @@
 #ifndef __NTHREADOSUTILS_WIN_H__
 #define __NTHREADOSUTILS_WIN_H__
 
-#ifdef __cplusplus
-extern "C" {
+#ifdef _WIN32
+#include <windows.h>
 #endif
 
 #include "ntosutils.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define NTOSUTILS_WIN_ERROR 0x1200
 #define NTOSUTILS_WIN_FIND_AVAIBLE_THREAD_ERROR 0x1201

@@ -25,12 +25,12 @@
 #ifndef __NTHREADOSUTILS_H__
 #define __NTHREADOSUTILS_H__
 
+#include "ntutils.h"
+#include "neptune.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include "ntutils.h"
-#include "neptune.h"
 
 #ifdef __WIN32
 #include "ntosutilswin.h"
