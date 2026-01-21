@@ -32,9 +32,9 @@
 extern "C" {
 #endif
 
-#ifdef __WIN32
+#ifdef _WIN32
 #include "ntosutilswin.h"
-#endif // __WIN32
+#endif // _WIN32
 
 #ifndef RET_OPCODE
 #define RET_OPCODE ((uint8_t)0xC3)
